@@ -33,8 +33,15 @@ const weatherSchema = z.object({
 })
 
 interface Location {
+  code: string;
   name: string;
-  [key: string]: any; // For other properties we don't use
+  geographic_level: string;
+  province_code?: string;
+  region_code?: string;
+  city_class?: string;
+  income_class?: string;
+  population?: number;
+  // Add or remove fields based on actual API response
 }
 
 export async function getWeatherForCity(cityName: string) {
