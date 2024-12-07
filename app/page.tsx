@@ -22,6 +22,14 @@ interface WeatherError {
   error: string;
 }
 
+interface PSGCLocation {
+  code: string;
+  name: string;
+  geographicLevel: string;
+  oldName?: string;
+  provinceCode?: string;
+}
+
 type WeatherResponse = WeatherData | WeatherError;
 
 export default function WeatherApp() {
@@ -61,9 +69,9 @@ export default function WeatherApp() {
       });
       const locationData = await locationResponse.json();
 
-      const filteredSuggestions = locationData.filter((location: any) =>
+      const filteredSuggestions = locationData.filter((location: PSGCLocation) =>
         location.name.toLowerCase().includes(value.toLowerCase())
-      ).map((location: any) => location.name);
+      ).map((location: PSGCLocation) => location.name);
 
       setSuggestions(filteredSuggestions)
     } else {

@@ -32,6 +32,10 @@ const weatherSchema = z.object({
   })
 })
 
+interface Location {
+  name: string;
+  [key: string]: any; // For other properties we don't use
+}
 
 export async function getWeatherForCity(cityName: string) {
   try {
@@ -45,7 +49,7 @@ export async function getWeatherForCity(cityName: string) {
     const locationData = await locationResponse.json();
 
     // Filter locations based on the user's input
-    const suggestions = locationData.filter((location: any) =>
+    const suggestions = locationData.filter((location: Location) =>
       location.name.toLowerCase().includes(cityName.toLowerCase())
     );
 
