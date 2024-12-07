@@ -32,7 +32,7 @@ const weatherSchema = z.object({
   })
 })
 
-type WeatherData = z.infer<typeof weatherSchema>
+
 export async function getWeatherForCity(cityName: string) {
   try {
     // Step 1: Get location suggestions using the provided API
