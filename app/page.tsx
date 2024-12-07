@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from "react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+
 import { Thermometer, Wind, MapPin, Cloud, AlertCircle } from 'lucide-react'
 import { getWeatherForCity } from "./actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+// Add these interfaces at the top of the file
 interface WeatherData {
   city: string;
   temperature: number;
@@ -143,3 +146,4 @@ export default function WeatherApp() {
     </div>
   )
 }
+
