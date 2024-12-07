@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Thermometer, Wind, MapPin, Cloud, AlertCircle } from 'lucide-react'
 import { getWeatherForCity } from "./actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -23,12 +25,15 @@ export default function WeatherApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [city, setCity] = useState("")
+  const [suggestions, setSuggestions] = useState<string[]>([])
 
-  async function fetchWeather() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const data: WeatherResponse = await getWeatherForCity("Bayombong")
+    const data: WeatherResponse = await getWeatherForCity(city)
     
     if ('error' in data) {
       setError(data.error)
@@ -40,16 +45,67 @@ export default function WeatherApp() {
     setLoading(false)
   }
 
-  useEffect(() => {
-    fetchWeather()
-  }, [])
+  async function handleCityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    setCity(value)
 
-  if (loading) {
-    return <div className="min-h-screen p-4 max-w-md mx-auto">Loading...</div>
+    if (value.length > 2) {
+      const locationUrl = `https://psgc.gitlab.io/api/municipalities/`
+      const locationResponse = await fetch(locationUrl, {
+        headers: {
+          'accept': 'text/html'
+        }
+      });
+      const locationData = await locationResponse.json();
+
+      const filteredSuggestions = locationData.filter((location: any) =>
+        location.name.toLowerCase().includes(value.toLowerCase())
+      ).map((location: any) => location.name);
+
+      setSuggestions(filteredSuggestions)
+    } else {
+      setSuggestions([])
+    }
   }
 
   return (
     <div className="min-h-screen p-4 max-w-md mx-auto space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>City Weather Lookup</CardTitle>
+          <CardDescription>Enter a city name to get current weather</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              placeholder="Enter city name"
+              value={city}
+              onChange={handleCityChange}
+              required
+            />
+            {suggestions.length > 0 && (
+              <ul className="bg-white border border-gray-300 rounded-md mt-2">
+                {suggestions.map((suggestion, index) => (
+                  <li
+                    key={index}
+                    className="p-2 cursor-pointer hover:bg-gray-200"
+                    onClick={() => {
+                      setCity(suggestion)
+                      setSuggestions([])
+                    }}
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Loading..." : "Get Weather"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

@@ -32,39 +32,60 @@ const weatherSchema = z.object({
   })
 })
 
+type WeatherData = z.infer<typeof weatherSchema>
 export async function getWeatherForCity(cityName: string) {
   try {
-    // Step 1: Get coordinates using Nominatim API
-    const geocodeUrl = `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(cityName)}&format=json`
-    const geocodeResponse = await fetch(geocodeUrl)
-    const geocodeData = await geocodeResponse.json()
+    // Step 1: Get location suggestions using the provided API
+    const locationUrl = `https://psgc.gitlab.io/api/municipalities/`
+    const locationResponse = await fetch(locationUrl, {
+      headers: {
+        'accept': 'text/html'
+      }
+    });
+    const locationData = await locationResponse.json();
 
-    if (!geocodeData || geocodeData.length === 0) {
-      return { error: `City '${cityName}' not found!` }
+    // Filter locations based on the user's input
+    const suggestions = locationData.filter((location: any) =>
+      location.name.toLowerCase().includes(cityName.toLowerCase())
+    );
+
+    if (suggestions.length === 0) {
+      return { error: `City '${cityName}' not found!` };
     }
 
-    const topResult = geocodeData[0]
-    const latitude = parseFloat(topResult.lat)
-    const longitude = parseFloat(topResult.lon)
-    const city = topResult.display_name
+    const topResult = suggestions[0];
+    const city = topResult.name;
 
-    // Step 2: Fetch weather using Open-Meteo API
+    // Step 2: Get coordinates using Nominatim API
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json`
+    const geocodeResponse = await fetch(geocodeUrl);
+    const geocodeData = await geocodeResponse.json();
+
+    if (!geocodeData || geocodeData.length === 0) {
+      return { error: `City '${city}' not found!` };
+    }
+
+    const latitude = parseFloat(geocodeData[0].lat);
+    const longitude = parseFloat(geocodeData[0].lon);
+
+    // Step 3: Fetch weather using Open-Meteo API
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,weather_code`
-    const weatherResponse = await fetch(weatherUrl)
-    const weatherData = await weatherResponse.json()
+    const weatherResponse = await fetch(weatherUrl);
+    const weatherData = await weatherResponse.json();
 
-    const parsedWeather = weatherSchema.parse(weatherData)
+    const parsedWeather = weatherSchema.parse(weatherData);
 
     return {
       city,
       temperature: parsedWeather.current.temperature_2m,
       windSpeed: parsedWeather.current.wind_speed_10m,
-      weatherCode: parsedWeather.current.weather_code,
       weatherDescription: weatherCodeMap[parsedWeather.current.weather_code] || 'Unknown'
-    }
+    };
   } catch (error) {
-    console.error('Error fetching weather data:', error)
-    return { error: 'Failed to fetch weather data. Please try again.' }
+    if (error instanceof Error) {
+      return { error: error.message };
+    } else {
+      return { error: 'An unknown error occurred' };
+    }
   }
 }
-
