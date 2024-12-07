@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Thermometer, Wind, MapPin, Cloud, AlertCircle } from 'lucide-react'
 import { getWeatherForCity } from "./actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+// Add these interfaces at the top of the file
 interface WeatherData {
   city: string;
   temperature: number;
@@ -23,12 +26,15 @@ export default function WeatherApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [city, setCity] = useState("")
 
-  async function fetchWeather() {
+  // Update the error handling
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const data: WeatherResponse = await getWeatherForCity("Bayombong")
+    const data: WeatherResponse = await getWeatherForCity(city)
     
     if ('error' in data) {
       setError(data.error)
@@ -40,16 +46,28 @@ export default function WeatherApp() {
     setLoading(false)
   }
 
-  useEffect(() => {
-    fetchWeather()
-  }, [])
-
-  if (loading) {
-    return <div className="min-h-screen p-4 max-w-md mx-auto">Loading...</div>
-  }
-
   return (
     <div className="min-h-screen p-4 max-w-md mx-auto space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>City Weather Lookup</CardTitle>
+          <CardDescription>Enter a city name to get current weather</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              placeholder="Enter city name"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+            />
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Loading..." : "Get Weather"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -87,3 +105,4 @@ export default function WeatherApp() {
     </div>
   )
 }
+
